@@ -54,7 +54,7 @@ function Block({ data }: { data: BlockData }) {
   }
   if (type === "NFT") {
     if (data.alt === "Bazar-Profile") {
-      return <BlockForBazarProfile />;
+      return <BlockForBazarProfile data={data} />;
     }
   }
 }
