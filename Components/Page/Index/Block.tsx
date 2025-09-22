@@ -9,6 +9,7 @@ import BlockForImage from "./Block/BlockForImage";
 import BlockForMap from "./Block/BlockForMap";
 import BlockForCalendar from "./Block/BlockForCalendar";
 import BlockForNewsLetter from "./Block/BlockForNewsLetter";
+import BlockForBazarProfile from "./Block/BlockForBazarProfile";
 function Block({ data }: { data: BlockData }) {
   const [type, setType] = useState<
     (typeof node.nav)[0]["name"] | null | undefined
@@ -49,6 +50,11 @@ function Block({ data }: { data: BlockData }) {
       return <BlockForNewsLetter data={data} />;
     } else {
       return <BlockForSU data={data} />;
+    }
+  }
+  if (type === "NFT") {
+    if (data.alt === "Bazar-Profile") {
+      return <BlockForBazarProfile />;
     }
   }
 }

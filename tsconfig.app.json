@@ -34,10 +34,5 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true
   },
-  "include": [
-    "src",
-    "Components/Page/Index/AddBlock.tsx",
-    "Components/Page/Index/BasicCard.tsx",
-    "Components/Page/Index/BlockDialog.tsx"
-  ]
+  "include": ["src", "Components", "Image", "utils", "store"]
 }
