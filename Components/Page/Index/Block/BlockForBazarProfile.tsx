@@ -63,7 +63,26 @@ function BlockForBazarProfile({ data }: { data: BlockData }) {
   const [selectedAssets, setSelectedAssets] = useState<string[]>([]);
   const isEnabled = data?.isEnabled ?? true;
   const blockName = data?.name ?? "Bazar Profile";
-
+  const [_address, setAddress] = useState("");
+  useEffect(() => {
+    if (address) {
+      run();
+    }
+    async function run() {
+      try {
+        const __address = await window.arweaveWallet.getActiveAddress();
+        if (__address) {
+          setAddress(__address);
+          return;
+        } else {
+          toast.error("Failed to get Active Address");
+        }
+        toast.error("Failed to get Active Address");
+      } catch {
+        toast.error("Failed to get Active Address");
+      }
+    }
+  }, [address, _address]);
   // Load selected assets from block data
   useEffect(() => {
     console.log(data);
@@ -87,7 +106,12 @@ function BlockForBazarProfile({ data }: { data: BlockData }) {
   } = useQuery<BazarProfile | { id: null }>({
     queryKey: ["bazar-profile", address],
     queryFn: () => permaweb.getProfileByWalletAddress(address as string),
-    enabled: !!address && address.trim() !== "",
+    enabled:
+      !!address &&
+      address.trim() !== "" &&
+      !!_address &&
+      _address.trim() !== "" &&
+      _address == address,
     retry: 1,
   });
 
