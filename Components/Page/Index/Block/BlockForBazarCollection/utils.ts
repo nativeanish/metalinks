@@ -3,6 +3,7 @@ import useAddress from "../../../../../store/useAddress";
 import permaweb from "../../../../../utils/permaweb";
 import { dryrun } from "@permaweb/aoconnect";
 import { toast } from "sonner";
+import type { CollectionDetailType } from "node_modules/@permaweb/libs/dist/types/helpers";
 export type AssetSortType =
   | "high-to-low"
   | "low-to-high"
@@ -176,10 +177,19 @@ const setState = async () => {
 export const getFullCollections = async () => {
   const address = useAddress.getState().address;
   const creatorId = await permaweb.getProfileByWalletAddress(address as string);
-  const collectionList = await permaweb.getCollections({
-    creator: creatorId.id,
-  });
-  return collectionList;
+  if (creatorId.collections && creatorId.collections.length > 0) {
+    creatorId.collections = [...new Set(creatorId.collections)];
+    const results = await Promise.all(
+      creatorId.collections.map(async (e: string) => {
+        const push = await permaweb.getCollection(e);
+        return push ? { ...push, id: e } : null;
+      })
+    );
+    const filtered = results.filter(Boolean) as Array<CollectionDetailType>;
+    console.log(filtered);
+    return filtered;
+  }
+  return null;
 };
 
 export const getCollectionwithAssets = async (collectionId: string) => {
