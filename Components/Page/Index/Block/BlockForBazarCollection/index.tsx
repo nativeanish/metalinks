@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import useAddress from "../../../../../store/useAddress";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { getCollectionwithAssets, getFullCollections } from "./utils";
 
 export default function BlockForBazarCollection() {
   const address = useAddress((state) => state.address);
@@ -28,7 +29,7 @@ export default function BlockForBazarCollection() {
   }, [address, _address]);
   const getMultipleCollectionQuery = useQuery({
     queryKey: ["bazar-collection", address],
-    queryFn: () => Promise<void>,
+    queryFn: () => getFullCollections(),
     enabled:
       !!address &&
       address.trim() !== "" &&
@@ -40,10 +41,18 @@ export default function BlockForBazarCollection() {
 
   const getSingleCollectionQuery = useQuery({
     queryKey: ["bazar-collection-single", collectionId],
-    queryFn: () => Promise<void>,
+    queryFn: () => getCollectionwithAssets(collectionId),
     enabled: !!collectionId && collectionId.trim() !== "",
     retry: 1,
   });
 
-  return <div>BlockForBazarCollection</div>;
+  return (
+    <div>
+      {collectionId && collectionId.trim() !== "" && collectionId.length > 0 ? (
+        <></>
+      ) : (
+        <></>
+      )}
+    </div>
+  );
 }
