@@ -153,26 +153,31 @@ const normalizedOrders = (ucm) =>
   ) || [];
 
 const setState = async () => {
-  const state = useCollectionState.getState().state;
-  if (state) {
+  try {
+    const state = useCollectionState.getState().state;
+    if (state) {
+      return true;
+    }
+    const data = await dryrun({
+      process: "hqdL4AZaFZ0huQHbAsYxdTwG6vpibK7ALWKNzmWaD4Q",
+      tags: [
+        {
+          name: "Action",
+          value: "Info",
+        },
+      ],
+    });
+    if (!data.Messages[0].data) {
+      return false;
+    }
+    useCollectionState
+      .getState()
+      .setCollectionState(normalizedOrders(JSON.parse(data.Messages[0].Data)));
     return true;
-  }
-  const data = await dryrun({
-    process: "hqdL4AZaFZ0huQHbAsYxdTwG6vpibK7ALWKNzmWaD4Q",
-    tags: [
-      {
-        name: "Action",
-        value: "Info",
-      },
-    ],
-  });
-  if (!data.Messages[0].data) {
+  } catch {
+    toast.error("Failed to fetch data from Bazar");
     return false;
   }
-  useCollectionState
-    .getState()
-    .setCollectionState(normalizedOrders(JSON.parse(data.Messages[0].Data)));
-  return true;
 };
 export const getFullCollections = async () => {
   const address = useAddress.getState().address;
@@ -192,12 +197,11 @@ export const getFullCollections = async () => {
   return null;
 };
 
-export const getCollectionwithAssets = async (collectionId: string) => {
-  const collection = await permaweb.getCollection(collectionId);
-  if (!collection) {
-    toast.error("Failed to find the Collection, Please Try Again.");
-    return false;
-  }
+export const getCollectionwithAssets = async (
+  collections: Array<CollectionDetailType>,
+  collectionId: string
+) => {
+  const collection = collections.find((col) => col.id === collectionId);
   if (!(await setState())) {
     toast.error("Failed to Load OrderBook from Bazar");
     return false;
@@ -207,6 +211,10 @@ export const getCollectionwithAssets = async (collectionId: string) => {
     toast.error("Failed to Load OrderBook from Bazar");
     return false;
   } else {
+    if (!collection) {
+      toast.error("Collection not found");
+      return false;
+    }
     const filteredEntries: OrderbookEntryType[] = data.filter(
       (entry: OrderbookEntryType) => collection.assetIds.includes(entry.Pair[0])
     );

@@ -58,7 +58,7 @@ function Block({ data }: { data: BlockData }) {
       return <BlockForBazarProfile data={data} />;
     }
     if (data.alt === "Bazar-Collection") {
-      return <BlockForBazarCollection />;
+      return <BlockForBazarCollection data={data} />;
     }
   }
 }

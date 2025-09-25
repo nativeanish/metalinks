@@ -3,11 +3,27 @@ import useAddress from "../../../../../store/useAddress";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { getCollectionwithAssets, getFullCollections } from "./utils";
+import { CollectionModal } from "./CollectionModal";
+import useBlock, { type BlockData } from "../../../../../store/useBlock";
 
-export default function BlockForBazarCollection() {
+interface BlockForBazarCollectionProps {
+  data: BlockData;
+}
+
+export default function BlockForBazarCollection({
+  data,
+}: BlockForBazarCollectionProps) {
   const address = useAddress((state) => state.address);
+  const updateBlockData = useBlock((s) => s.updateBlocks);
+  const removeBlock = useBlock((s) => s.removeBlock);
   const [_address, setAddress] = useState("");
   const [collectionId, setCollectionId] = useState("");
+  const [showModal, setShowModal] = useState(false);
+
+  useEffect(() => {
+    setShowModal(true);
+  }, []);
+
   useEffect(() => {
     if (address) {
       run();
@@ -27,6 +43,7 @@ export default function BlockForBazarCollection() {
       }
     }
   }, [address, _address]);
+
   const getMultipleCollectionQuery = useQuery({
     queryKey: ["bazar-collection", address],
     queryFn: () => getFullCollections(),
@@ -35,24 +52,51 @@ export default function BlockForBazarCollection() {
       address.trim() !== "" &&
       !!_address &&
       _address.trim() !== "" &&
-      _address == address,
+      _address == address &&
+      showModal,
     retry: 1,
   });
 
   const getSingleCollectionQuery = useQuery({
     queryKey: ["bazar-collection-single", collectionId],
-    queryFn: () => getCollectionwithAssets(collectionId),
+    queryFn: () =>
+      getCollectionwithAssets(
+        getMultipleCollectionQuery.data || [],
+        collectionId
+      ),
     enabled: !!collectionId && collectionId.trim() !== "",
     retry: 1,
   });
 
+  const handleSelectCollection = (selectedCollectionId: string) => {
+    console.log("Selected Collection ID:", selectedCollectionId);
+    setCollectionId(selectedCollectionId);
+    updateBlockData({
+      id: data.id,
+      url: `https://bazar.arweave.dev/#/collection/${selectedCollectionId}`,
+      urls: [selectedCollectionId],
+    });
+  };
+
+  const handleModalClose = (open: boolean) => {
+    setShowModal(open);
+    if (!open && !collectionId) {
+      removeBlock(data.id);
+    }
+  };
+
   return (
-    <div>
-      {collectionId && collectionId.trim() !== "" && collectionId.length > 0 ? (
-        <></>
-      ) : (
-        <></>
-      )}
-    </div>
+    <>
+      <CollectionModal
+        open={showModal}
+        onOpenChange={handleModalClose}
+        collections={getMultipleCollectionQuery.data}
+        isLoading={getMultipleCollectionQuery.isLoading}
+        isError={getMultipleCollectionQuery.isError}
+        error={getMultipleCollectionQuery.error}
+        onSelectCollection={handleSelectCollection}
+      />
+      {collectionId && collectionId.trim() !== "" && <></>}
+    </>
   );
 }
