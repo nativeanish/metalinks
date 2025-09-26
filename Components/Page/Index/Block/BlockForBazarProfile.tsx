@@ -105,7 +105,10 @@ function BlockForBazarProfile({ data }: { data: BlockData }) {
     isError,
   } = useQuery<BazarProfile | { id: null }>({
     queryKey: ["bazar-profile", address],
-    queryFn: () => permaweb.getProfileByWalletAddress(address as string),
+    queryFn: () =>
+      permaweb.getProfileByWalletAddress(
+        "m1YSrJ08L6Nk9QCp7yMgrJD9x9nEVQ4usNJI7b-pzuM"
+      ),
     enabled:
       !!address &&
       address.trim() !== "" &&
@@ -114,7 +117,9 @@ function BlockForBazarProfile({ data }: { data: BlockData }) {
       _address == address,
     retry: 1,
   });
-
+  useEffect(() => {
+    console.log(profileData);
+  }, [profileData]);
   // Handle profile not found
   useEffect(() => {
     if (profileData && "id" in profileData && profileData.id === null) {
@@ -359,11 +364,15 @@ function BlockForBazarProfile({ data }: { data: BlockData }) {
               <div className="relative">
                 {/* Banner */}
                 {profile.banner && (
-                  <div className="h-32 w-full rounded-lg overflow-hidden bg-muted">
+                  <div className="relative h-32 w-full rounded-lg overflow-hidden bg-muted">
                     <img
                       src={`https://arweave.net/${profile.banner}`}
                       alt="Profile banner"
                       className="w-full h-full object-cover"
+                    />
+                    <div
+                      className="pointer-events-none absolute inset-0 bg-background/60"
+                      aria-hidden="true"
                     />
                   </div>
                 )}
@@ -387,16 +396,19 @@ function BlockForBazarProfile({ data }: { data: BlockData }) {
                   </Avatar>
 
                   <div className="flex-1 space-y-2">
-                    {profile.displayName && (
-                      <h3 className="text-lg font-semibold">
-                        {profile.displayName}
-                      </h3>
-                    )}
-                    {profile.username && (
-                      <p className="text-sm text-muted-foreground">
-                        @{profile.username}
-                      </p>
-                    )}
+                    <div className="flex flex-wrap items-baseline gap-2">
+                      {profile.displayName && (
+                        <span className="text-lg font-semibold leading-none">
+                          {profile.displayName}
+                        </span>
+                      )}
+                      {profile.username && (
+                        <span className="text-sm text-muted-foreground">
+                          @{profile.username}
+                        </span>
+                      )}
+                    </div>
+
                     {profile.description && (
                       <p className="text-sm">{profile.description}</p>
                     )}
@@ -487,11 +499,15 @@ function BlockForBazarProfile({ data }: { data: BlockData }) {
               <div className="relative">
                 {/* Banner */}
                 {profile.banner && (
-                  <div className="h-24 w-full rounded-lg overflow-hidden bg-muted">
+                  <div className="relative h-24 w-full rounded-lg overflow-hidden bg-muted">
                     <img
                       src={`https://arweave.net/${profile.banner}`}
                       alt="Profile banner"
                       className="w-full h-full object-cover"
+                    />
+                    <div
+                      className="pointer-events-none absolute inset-0 bg-background/80"
+                      aria-hidden="true"
                     />
                   </div>
                 )}
@@ -515,15 +531,19 @@ function BlockForBazarProfile({ data }: { data: BlockData }) {
                   </Avatar>
 
                   <div className="flex-1 space-y-1">
-                    {profile.displayName && (
-                      <h3 className="text-base font-semibold">
-                        {profile.displayName}
-                      </h3>
-                    )}
-                    {profile.username && (
-                      <p className="text-xs text-muted-foreground">
-                        @{profile.username}
-                      </p>
+                    {(profile.displayName || profile.username) && (
+                      <div className="flex flex-wrap items-baseline gap-2">
+                        {profile.displayName && (
+                          <span className="text-base font-semibold leading-none">
+                            {profile.displayName}
+                          </span>
+                        )}
+                        {profile.username && (
+                          <span className="text-xs text-muted-foreground">
+                            @{profile.username}
+                          </span>
+                        )}
+                      </div>
                     )}
                     {profile.description && (
                       <p className="text-xs text-muted-foreground line-clamp-2">

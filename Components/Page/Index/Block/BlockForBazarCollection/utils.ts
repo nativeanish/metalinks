@@ -1,5 +1,5 @@
 import useCollectionState from "../../../../../store/useCollectionState";
-import useAddress from "../../../../../store/useAddress";
+// import useAddress from "../../../../../store/useAddress";
 import permaweb from "../../../../../utils/permaweb";
 import { dryrun } from "@permaweb/aoconnect";
 import { toast } from "sonner";
@@ -167,21 +167,20 @@ const setState = async () => {
         },
       ],
     });
-    if (!data.Messages[0].data) {
-      return false;
-    }
     useCollectionState
       .getState()
       .setCollectionState(normalizedOrders(JSON.parse(data.Messages[0].Data)));
     return true;
-  } catch {
-    toast.error("Failed to fetch data from Bazar");
+  } catch (err) {
+    console.error(err);
     return false;
   }
 };
 export const getFullCollections = async () => {
-  const address = useAddress.getState().address;
-  const creatorId = await permaweb.getProfileByWalletAddress(address as string);
+  // const address = useAddress.getState().address;
+  const creatorId = await permaweb.getProfileByWalletAddress(
+    "m1YSrJ08L6Nk9QCp7yMgrJD9x9nEVQ4usNJI7b-pzuM"
+  );
   if (creatorId.collections && creatorId.collections.length > 0) {
     creatorId.collections = [...new Set(creatorId.collections)];
     const results = await Promise.all(
@@ -191,7 +190,6 @@ export const getFullCollections = async () => {
       })
     );
     const filtered = results.filter(Boolean) as Array<CollectionDetailType>;
-    console.log(filtered);
     return filtered;
   }
   return null;
@@ -201,37 +199,47 @@ export const getCollectionwithAssets = async (
   collections: Array<CollectionDetailType>,
   collectionId: string
 ) => {
-  const collection = collections.find((col) => col.id === collectionId);
-  if (!(await setState())) {
-    toast.error("Failed to Load OrderBook from Bazar");
-    return false;
-  }
-  const data = useCollectionState.getState().state;
-  if (!data?.length) {
-    toast.error("Failed to Load OrderBook from Bazar");
-    return false;
-  } else {
-    if (!collection) {
-      toast.error("Collection not found");
+  try {
+    const collection = collections.find((col) => col.id === collectionId);
+    await setState();
+    const state = useCollectionState.getState().state;
+    if (state === null || state === undefined || !state) {
+      toast.error("Failed to Load OrderBook from Bazar");
       return false;
     }
-    const filteredEntries: OrderbookEntryType[] = data.filter(
-      (entry: OrderbookEntryType) => collection.assetIds.includes(entry.Pair[0])
-    );
-    const sortedEntries: OrderbookEntryType[] = sortOrderbookEntries(
-      filteredEntries,
-      "low-to-high",
-      {}
-    );
-    return {
-      price: getPrice(sortedEntries),
-      pl:
-        (filteredEntries.filter(
-          (entry) => entry.Orders && entry.Orders.length > 0
-        ).length /
-          collection.assetIds.length) *
-        100,
-      currency: sortedEntries[0] ? sortedEntries[0].Pair[1] : null,
-    };
+    const data = useCollectionState.getState().state;
+    if (data) {
+      if (!collection) {
+        toast.error("Collection not found");
+        return false;
+      }
+      const filteredEntries: OrderbookEntryType[] = data.filter(
+        //@ts-expect-error I have not defined the types
+        (entry: OrderbookEntryType) => collection.assets.includes(entry.Pair[0])
+      );
+      const sortedEntries: OrderbookEntryType[] = sortOrderbookEntries(
+        filteredEntries,
+        "low-to-high",
+        {}
+      );
+      return {
+        price: getPrice(sortedEntries),
+        pl:
+          (filteredEntries.filter(
+            (entry) => entry.Orders && entry.Orders.length > 0
+          ).length /
+            //@ts-expect-error I have not defined the types
+            collection.assets.length) *
+          100,
+        currency: sortedEntries[0] ? sortedEntries[0].Pair[1] : null,
+      };
+    } else {
+      toast.error("Failed to Load OrderBook from Bazar 4343");
+      return false;
+    }
+  } catch (err) {
+    console.error(err);
+    toast.error("An error occurred while fetching the collection data");
+    return false;
   }
 };

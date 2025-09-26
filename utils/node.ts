@@ -12,6 +12,8 @@ import {
   Map,
   Calendar,
   Newspaper,
+  Images,
+  User,
 } from "lucide-react";
 import { SiFarcaster } from "react-icons/si";
 import Paragraph from "../Image/Paragraph";
@@ -204,13 +206,13 @@ const node = {
         {
           name: "Bazar Collection",
           alt: "Bazar-Collection",
-          icon: RiNftFill,
+          icon: Images,
           description: "A collection of your unique digital assets",
         },
         {
           name: "Bazar Profile",
           alt: "Bazar-Profile",
-          icon: RiNftFill,
+          icon: User,
           description: "A profile showcasing your unique digital assets",
         },
       ],
