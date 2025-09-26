@@ -11,6 +11,7 @@ import BlockForCalendar from "./Block/BlockForCalendar";
 import BlockForNewsLetter from "./Block/BlockForNewsLetter";
 import BlockForBazarProfile from "./Block/BlockForBazarProfile";
 import BlockForBazarCollection from "./Block/BlockForBazarCollection";
+import BlockForUrl from "./Block/BlockForUrl";
 function Block({ data }: { data: BlockData }) {
   const [type, setType] = useState<
     (typeof node.nav)[0]["name"] | null | undefined
@@ -50,7 +51,7 @@ function Block({ data }: { data: BlockData }) {
     } else if (data.alt === "NewsLetter-Card") {
       return <BlockForNewsLetter data={data} />;
     } else {
-      return <BlockForSU data={data} />;
+      return <BlockForUrl data={data} />;
     }
   }
   if (type === "NFT") {

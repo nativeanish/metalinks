@@ -1,5 +1,5 @@
 import useCollectionState from "../../../../../store/useCollectionState";
-// import useAddress from "../../../../../store/useAddress";
+import useAddress from "../../../../../store/useAddress";
 import permaweb from "../../../../../utils/permaweb";
 import { dryrun } from "@permaweb/aoconnect";
 import { toast } from "sonner";
@@ -179,10 +179,12 @@ const setState = async () => {
   }
 };
 export const getFullCollections = async () => {
-  // const address = useAddress.getState().address;
-  const creatorId = await permaweb.getProfileByWalletAddress(
-    "m1YSrJ08L6Nk9QCp7yMgrJD9x9nEVQ4usNJI7b-pzuM"
-  );
+  const address = useAddress.getState().address;
+  if (!address) {
+    toast.error("Active wallet not found. Please connect your wallet.");
+    return null;
+  }
+  const creatorId = await permaweb.getProfileByWalletAddress(address);
   if (creatorId.collections && creatorId.collections.length > 0) {
     creatorId.collections = [...new Set(creatorId.collections)];
     const results = await Promise.all(

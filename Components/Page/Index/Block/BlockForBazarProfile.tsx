@@ -34,6 +34,7 @@ import useAddress from "../../../../store/useAddress";
 import useBlock, { type BlockData } from "../../../../store/useBlock";
 import { fetchProfilewithAssets } from "./BazarUtils/fetchDetails";
 import BazarAssetViewer from "./BazarUtils/BazarAssetViewer";
+import type { BazarAsset, BazarProfile } from "../../../../src/types";
 
 function BlockForBazarProfile({ data }: { data: BlockData }) {
   const address = useAddress((state) => state.address);
@@ -85,8 +86,7 @@ function BlockForBazarProfile({ data }: { data: BlockData }) {
     isError,
   } = useQuery<BazarProfile | { id: null }>({
     queryKey: ["bazar-profile", address],
-    queryFn: () =>
-      fetchProfilewithAssets("m1YSrJ08L6Nk9QCp7yMgrJD9x9nEVQ4usNJI7b-pzuM"),
+    queryFn: () => fetchProfilewithAssets(_address || address || ""),
     enabled:
       !!address &&
       address.trim() !== "" &&
