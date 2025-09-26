@@ -1,3 +1,4 @@
+import type { BazarAsset } from "../../../../../src/types";
 import { Token } from "../../../../../utils/token";
 import { Check, FileQuestion } from "lucide-react";
 
@@ -86,7 +87,7 @@ function BazarAssetViewer({
             <img
               src={`https://arweave.net/${asset.logoImage}`}
               alt={`Asset ${asset.id}`}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover cursor-pointer"
               onClick={(e) => {
                 e.stopPropagation();
                 window.open(
@@ -100,7 +101,7 @@ function BazarAssetViewer({
             <img
               src={`https://arweave.net/${asset.id}`}
               alt={`Asset ${asset.id}`}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover cursor-pointer"
               onClick={(e) => {
                 e.stopPropagation();
                 window.open(
@@ -114,7 +115,7 @@ function BazarAssetViewer({
             // Make sure video is played infinite without showing controls
             <video
               src={`https://arweave.net/${asset.id}`}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover cursor-pointer"
               autoPlay
               loop
               muted
@@ -129,7 +130,7 @@ function BazarAssetViewer({
           )}
           {asset.type === "unknown" && (
             <div
-              className="flex items-center justify-center h-full text-muted-foreground"
+              className="flex items-center justify-center h-full text-muted-foreground cursor-pointer"
               onClick={(e) => {
                 e.stopPropagation();
                 window.open(

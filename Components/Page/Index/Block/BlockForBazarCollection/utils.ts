@@ -3,7 +3,9 @@ import useCollectionState from "../../../../../store/useCollectionState";
 import permaweb from "../../../../../utils/permaweb";
 import { dryrun } from "@permaweb/aoconnect";
 import { toast } from "sonner";
+import { Token } from "../../../../../utils/token";
 import type { CollectionDetailType } from "node_modules/@permaweb/libs/dist/types/helpers";
+import { getContentTypes } from "../BazarUtils/fetchDetails";
 export type AssetSortType =
   | "high-to-low"
   | "low-to-high"
@@ -195,6 +197,71 @@ export const getFullCollections = async () => {
   return null;
 };
 
+export const getCollectionAssets = async (collectionId: string) => {
+  console.log("Fetching assets for collection:", collectionId);
+  try {
+    const collection = (await permaweb.getCollection(
+      collectionId
+    )) as CollectionDetailType | null;
+    if (!collection || !collection.assets || collection.assets.length === 0) {
+      return [];
+    }
+
+    const finalArray: Array<{
+      type: "image" | "video" | "unknown" | "token";
+      id: string;
+      logoImage: string;
+      quantity: string;
+    }> = [];
+
+    // Filter token assets
+    const filteredAssets = collection.assets.filter((assetId: string) => {
+      return Token.some((token) => token.address === assetId);
+    });
+
+    filteredAssets.forEach((assetId: string) => {
+      finalArray.push({
+        type: "token",
+        id: assetId,
+        logoImage: Token.find((t) => t.address === assetId)?.logo || "",
+        quantity: "1", // Default quantity for collection assets
+      });
+    });
+
+    // Handle remaining assets
+    const remainingAssets = collection.assets.filter(
+      (assetId: string) => !Token.some((token) => token.address === assetId)
+    );
+
+    if (remainingAssets.length > 0) {
+      const contentTypes = await getContentTypes(remainingAssets);
+      remainingAssets.forEach((assetId: string) => {
+        const contentTypeEntry = contentTypes.find((ct) => ct.id === assetId);
+        const contentType = contentTypeEntry
+          ? contentTypeEntry.contentType
+          : null;
+        finalArray.push({
+          type:
+            contentType && contentType.startsWith("video/")
+              ? "video"
+              : contentType && contentType.startsWith("image/")
+                ? "image"
+                : "unknown",
+          id: assetId,
+          logoImage: "",
+          quantity: "1", // Default quantity for collection assets
+        });
+      });
+    }
+
+    return finalArray;
+  } catch (err) {
+    console.error("Failed to fetch collection assets:", err);
+    toast.error("Failed to fetch collection assets");
+    throw new Error("Failed to fetch collection assets");
+  }
+};
+
 export const getCollectionwithAssets = async (
   collections: Array<CollectionDetailType>,
   collectionId: string
@@ -214,7 +281,6 @@ export const getCollectionwithAssets = async (
         return false;
       }
       const filteredEntries: OrderbookEntryType[] = data.filter(
-        //@ts-expect-error I have not defined the types
         (entry: OrderbookEntryType) => collection.assets.includes(entry.Pair[0])
       );
       const sortedEntries: OrderbookEntryType[] = sortOrderbookEntries(
@@ -228,7 +294,6 @@ export const getCollectionwithAssets = async (
           (filteredEntries.filter(
             (entry) => entry.Orders && entry.Orders.length > 0
           ).length /
-            //@ts-expect-error I have not defined the types
             collection.assets.length) *
           100,
         currency: sortedEntries[0] ? sortedEntries[0].Pair[1] : null,

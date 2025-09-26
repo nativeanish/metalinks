@@ -2,7 +2,11 @@ import { useQuery } from "@tanstack/react-query";
 import useAddress from "../../../../../store/useAddress";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { getCollectionwithAssets, getFullCollections } from "./utils";
+import {
+  getCollectionwithAssets,
+  getFullCollections,
+  getCollectionAssets,
+} from "./utils";
 import { CollectionModal } from "./CollectionModal";
 import useBlock, { type BlockData } from "../../../../../store/useBlock";
 import {
@@ -21,16 +25,19 @@ import {
 import { Badge } from "../../../../../src/components/ui/badge";
 import {
   Trash2,
-  Edit3,
-  BarChart3,
+  CreditCard as Edit3,
+  Save,
+  ChartBar as BarChart3,
   ExternalLink,
   TrendingUp,
-  Loader2,
+  Loader as Loader2,
   Image as ImageIcon,
-  AlertCircle,
+  CircleAlert as AlertCircle,
 } from "lucide-react";
 import type { CollectionDetailType } from "node_modules/@permaweb/libs/dist/types/helpers";
 import { Token } from "../../../../../utils/token";
+import BazarAssetViewer from "../BazarUtils/BazarAssetViewer";
+import type { BazarAsset } from "../../../../../src/types";
 
 interface BlockForBazarCollectionProps {
   data: BlockData;
@@ -61,8 +68,23 @@ export default function BlockForBazarCollection({
   const removeBlock = useBlock((s) => s.removeBlock);
   const [_address, setAddress] = useState("");
   const [collectionId, setCollectionId] = useState(() => data.urls?.[0] ?? "");
+  const [selectedAssets, setSelectedAssets] = useState<string[]>([]);
+  const [isEditing, setIsEditing] = useState(false);
   const [showModal, setShowModal] = useState(() => !data.urls?.[0]);
   const pendingSelectionRef = useRef(false);
+
+  // Load selected assets from block data
+  useEffect(() => {
+    if (data?.urls && data.urls.length > 1) {
+      try {
+        const saved = JSON.parse(data.urls[1]);
+        setSelectedAssets(saved.selectedAssets || []);
+      } catch (err) {
+        console.log("Failed to parse saved asset selection", err);
+      }
+    }
+  }, [data]);
+
   useEffect(() => {
     if (address) {
       run();
@@ -91,6 +113,13 @@ export default function BlockForBazarCollection({
       _address.trim() !== "" &&
       _address === address &&
       (showModal || !!collectionId),
+    retry: 1,
+  });
+
+  const getCollectionAssetsQuery = useQuery({
+    queryKey: ["bazar-collection-assets", collectionId],
+    queryFn: () => getCollectionAssets(collectionId),
+    enabled: !!collectionId && collectionId.trim() !== "" && isEditing,
     retry: 1,
   });
 
@@ -150,11 +179,40 @@ export default function BlockForBazarCollection({
   const handleSelectCollection = (selectedCollectionId: string) => {
     pendingSelectionRef.current = true;
     setCollectionId(selectedCollectionId);
+    setSelectedAssets([]); // Reset selected assets when changing collection
     updateBlockData({
       id: data.id,
       url: `https://bazar.arweave.dev/#/collection/${selectedCollectionId}`,
       urls: [selectedCollectionId],
     });
+  };
+
+  const toggleAssetSelection = (asset: BazarAsset) => {
+    setSelectedAssets((prev) => {
+      if (prev.includes(asset.id)) {
+        return prev.filter((id) => id !== asset.id);
+      } else if (prev.length < 5) {
+        return [...prev, asset.id];
+      } else {
+        toast.warning("Maximum 5 assets allowed", {
+          description: "You can select up to 5 assets for your collection.",
+        });
+        return prev;
+      }
+    });
+  };
+
+  const saveAssetSelection = () => {
+    const saveData = {
+      selectedAssets,
+      collectionId,
+    };
+
+    updateBlockData({
+      id: data.id,
+      urls: [collectionId, JSON.stringify(saveData)],
+    });
+    setIsEditing(false);
   };
 
   const handleModalClose = (open: boolean) => {
@@ -178,7 +236,7 @@ export default function BlockForBazarCollection({
   }, [collectionId]);
 
   const handleEdit = () => {
-    setShowModal(true);
+    setIsEditing(true);
   };
 
   const formatPercentage = (percentage: number | null | undefined) => {
@@ -332,6 +390,131 @@ export default function BlockForBazarCollection({
                   </Button>
                 </div>
               </div>
+            ) : isEditing ? (
+              <div className="space-y-6">
+                {/* Collection Preview */}
+                {selectedCollection && (
+                  <div className="space-y-4">
+                    <div className="relative">
+                      {selectedCollection.banner && (
+                        <div className="relative h-32 w-full rounded-lg overflow-hidden bg-muted">
+                          <img
+                            src={`https://arweave.net/${selectedCollection.banner}`}
+                            alt="Collection banner"
+                            className="w-full h-full object-cover"
+                          />
+                          <div
+                            className="pointer-events-none absolute inset-0 bg-background/60"
+                            aria-hidden="true"
+                          />
+                        </div>
+                      )}
+
+                      <div
+                        className={`flex items-start gap-4 ${selectedCollection.banner ? "-mt-8 relative z-10 px-4" : ""}`}
+                      >
+                        <div className="w-16 h-16 rounded-lg overflow-hidden bg-muted border-4 border-background">
+                          {selectedCollection.thumbnail ? (
+                            <img
+                              src={`https://arweave.net/${selectedCollection.thumbnail}`}
+                              alt={selectedCollection.title}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <ImageIcon className="h-8 w-8 text-muted-foreground" />
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="flex-1 space-y-2">
+                          <div className="flex flex-wrap items-baseline gap-2">
+                            <span className="text-lg font-semibold leading-none">
+                              {selectedCollection.name ||
+                                selectedCollection.title}
+                            </span>
+                          </div>
+
+                          {selectedCollection.description && (
+                            <p className="text-sm">
+                              {selectedCollection.description}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Asset Selection */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="text-sm font-medium">
+                        Select Assets to Display
+                      </h4>
+                      <p className="text-xs text-muted-foreground">
+                        Choose up to 5 assets to showcase (
+                        {selectedAssets.length}/5 selected)
+                      </p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowModal(true)}
+                    >
+                      Change Collection
+                    </Button>
+                  </div>
+
+                  {getCollectionAssetsQuery.isLoading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="text-center space-y-4">
+                        <Loader2 className="h-6 w-6 animate-spin text-primary mx-auto" />
+                        <p className="text-sm">Loading collection assets...</p>
+                      </div>
+                    </div>
+                  ) : getCollectionAssetsQuery.data &&
+                    getCollectionAssetsQuery.data.length > 0 ? (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 max-h-64 overflow-y-auto">
+                      {getCollectionAssetsQuery.data.map((asset) => (
+                        <BazarAssetViewer
+                          key={asset.id}
+                          asset={asset}
+                          selectedAssets={selectedAssets}
+                          isEditing={true}
+                          toggleAssetSelection={toggleAssetSelection}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <ImageIcon className="h-8 w-8 mx-auto mb-2" />
+                      <p className="text-sm">
+                        No assets found in this collection
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex justify-end gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsEditing(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={saveAssetSelection}
+                    className="bg-primary hover:bg-primary/90"
+                  >
+                    <Save className="h-4 w-4 mr-2" />
+                    Save Collection
+                  </Button>
+                </div>
+              </div>
             ) : (
               <div className="space-y-4">
                 {selectedCollection && (
@@ -388,6 +571,36 @@ export default function BlockForBazarCollection({
                   </div>
                 )}
 
+                {/* Selected Assets Display */}
+                {selectedAssets.length > 0 && (
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-sm font-medium">Featured Assets</h4>
+                      <Badge variant="secondary" className="text-xs">
+                        {selectedAssets.length} selected
+                      </Badge>
+                    </div>
+
+                    <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+                      {selectedAssets.map((assetId) => {
+                        const asset = getCollectionAssetsQuery.data?.find(
+                          (a) => a.id === assetId
+                        );
+                        if (!asset) return null;
+                        return (
+                          <BazarAssetViewer
+                            key={asset.id}
+                            asset={asset}
+                            selectedAssets={selectedAssets}
+                            isEditing={false}
+                            toggleAssetSelection={() => {}}
+                          />
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="p-3 bg-muted/30 rounded-lg">
                     <div className="flex items-center gap-2 mb-1">
@@ -429,7 +642,7 @@ export default function BlockForBazarCollection({
                   <div className="flex items-center gap-2">
                     <Button variant="outline" size="sm" onClick={handleEdit}>
                       <Edit3 className="h-4 w-4 mr-2" />
-                      Change Collection
+                      Edit Collection
                     </Button>
                     <Button
                       variant="outline"

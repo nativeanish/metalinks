@@ -17,3 +17,16 @@ interface BazarProfile {
   collections: string[];
   thumbnail?: string;
 }
+
+export type CollectionType = {
+  id: string;
+  title: string;
+  description: string | null;
+  creator: string;
+  dateCreated: string;
+  banner: string | null;
+  thumbnail: string | null;
+};
+export type CollectionDetailType = CollectionType & {
+  assets: BazarAsset[];
+};

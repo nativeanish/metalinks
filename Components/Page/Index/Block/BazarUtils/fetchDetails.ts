@@ -10,7 +10,7 @@ interface TransactionNode {
   }[];
 }
 
-async function getContentTypes(
+export async function getContentTypes(
   ids: string[]
 ): Promise<{ id: string; contentType: string | null }[]> {
   const chunkSize = 100;
