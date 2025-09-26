@@ -29,31 +29,11 @@ import {
   Image as ImageIcon,
   Loader2,
   AlertCircle,
-  Check,
 } from "lucide-react";
 import useAddress from "../../../../store/useAddress";
 import useBlock, { type BlockData } from "../../../../store/useBlock";
-import permaweb from "../../../../utils/permaweb";
-
-interface BazarAsset {
-  id: string;
-  quantity: string;
-  dateCreated: number;
-  lastUpdate: number;
-}
-
-interface BazarProfile {
-  id: string;
-  owner: string;
-  assets: BazarAsset[];
-  version: string;
-  description?: string;
-  banner?: string;
-  username?: string;
-  displayName?: string;
-  collections: string[];
-  thumbnail?: string;
-}
+import { fetchProfilewithAssets } from "./BazarUtils/fetchDetails";
+import BazarAssetViewer from "./BazarUtils/BazarAssetViewer";
 
 function BlockForBazarProfile({ data }: { data: BlockData }) {
   const address = useAddress((state) => state.address);
@@ -106,9 +86,7 @@ function BlockForBazarProfile({ data }: { data: BlockData }) {
   } = useQuery<BazarProfile | { id: null }>({
     queryKey: ["bazar-profile", address],
     queryFn: () =>
-      permaweb.getProfileByWalletAddress(
-        "m1YSrJ08L6Nk9QCp7yMgrJD9x9nEVQ4usNJI7b-pzuM"
-      ),
+      fetchProfilewithAssets("m1YSrJ08L6Nk9QCp7yMgrJD9x9nEVQ4usNJI7b-pzuM"),
     enabled:
       !!address &&
       address.trim() !== "" &&
@@ -143,12 +121,12 @@ function BlockForBazarProfile({ data }: { data: BlockData }) {
     }
   }, [isError, error]);
 
-  const toggleAssetSelection = (assetId: string) => {
+  const toggleAssetSelection = (asset: BazarAsset) => {
     setSelectedAssets((prev) => {
-      if (prev.includes(assetId)) {
-        return prev.filter((id) => id !== assetId);
+      if (prev.includes(asset.id)) {
+        return prev.filter((id) => id !== asset.id);
       } else if (prev.length < 5) {
-        return [...prev, assetId];
+        return [...prev, asset.id];
       } else {
         toast.warning("Maximum 5 assets allowed", {
           description: "You can select up to 5 assets for your profile.",
@@ -275,8 +253,15 @@ function BlockForBazarProfile({ data }: { data: BlockData }) {
   if (!profileData || !("id" in profileData) || !profileData.id) {
     return null;
   }
-
-  const profile = profileData as BazarProfile;
+  // here overide assets from above Array<{ type: "image" | "video" | "unknown" | "token"; id: string; logoImage: string; }>
+  const profile = profileData as BazarProfile & {
+    assets: Array<{
+      type: "image" | "video" | "unknown" | "token";
+      id: string;
+      logoImage: string;
+      quantity: string;
+    }>;
+  };
 
   return (
     <Card
@@ -434,36 +419,13 @@ function BlockForBazarProfile({ data }: { data: BlockData }) {
               {profile.assets && profile.assets.length > 0 ? (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 max-h-64 overflow-y-auto">
                   {profile.assets.map((asset) => (
-                    <div
+                    <BazarAssetViewer
                       key={asset.id}
-                      className={`relative group cursor-pointer rounded-lg border-2 transition-all ${
-                        selectedAssets.includes(asset.id)
-                          ? "border-primary bg-primary/5"
-                          : "border-border hover:border-primary/50"
-                      }`}
-                      onClick={() => toggleAssetSelection(asset.id)}
-                    >
-                      <div className="aspect-square w-full rounded-lg overflow-hidden bg-muted">
-                        <img
-                          src={`https://arweave.net/${asset.id}`}
-                          alt={`Asset ${asset.id}`}
-                          className="w-full h-full object-cover"
-                          loading="lazy"
-                        />
-                      </div>
-
-                      {selectedAssets.includes(asset.id) && (
-                        <div className="absolute top-2 right-2 bg-primary text-primary-foreground rounded-full p-1">
-                          <Check className="h-3 w-3" />
-                        </div>
-                      )}
-
-                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-2">
-                        <p className="text-xs text-white font-medium truncate">
-                          Qty: {asset.quantity}
-                        </p>
-                      </div>
-                    </div>
+                      asset={asset}
+                      selectedAssets={selectedAssets}
+                      isEditing={true}
+                      toggleAssetSelection={toggleAssetSelection}
+                    />
                   ))}
                 </div>
               ) : (
@@ -566,19 +528,19 @@ function BlockForBazarProfile({ data }: { data: BlockData }) {
                 </div>
 
                 <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
-                  {selectedAssets.map((assetId) => (
-                    <div
-                      key={assetId}
-                      className="aspect-square rounded-md overflow-hidden bg-muted"
-                    >
-                      <img
-                        src={`https://arweave.net/${assetId}`}
-                        alt={`Asset ${assetId}`}
-                        className="w-full h-full object-cover"
-                        loading="lazy"
+                  {selectedAssets.map((assetId) => {
+                    const asset = profile.assets.find((a) => a.id === assetId);
+                    if (!asset) return null;
+                    return (
+                      <BazarAssetViewer
+                        key={asset.id}
+                        asset={asset}
+                        selectedAssets={selectedAssets}
+                        isEditing={false}
+                        toggleAssetSelection={() => {}}
                       />
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
