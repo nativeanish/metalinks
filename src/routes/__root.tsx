@@ -1,6 +1,6 @@
 import { createRootRoute, Outlet } from "@tanstack/react-router";
 
-import MobileView from "../../Components/MobileView";
+// import MobileView from "../../Components/MobileView";
 import { ThemeProvider } from "../theme-provider";
 // Sidebar removed; layout simplified (AppSidebar + providers removed)
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
@@ -63,10 +63,10 @@ function App() {
         <div className="relative w-full">
           <NavBar />
         </div>
-        <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+        <div className="flex flex-1 flex-col gap-4 p-4 pt-0 mt-16">
           <div className="w-full min-h-screen flex flex-col lg:flex-row relative">
             <Outlet />
-            <MobileView />
+            {/* <MobileView /> */}
           </div>
         </div>
       </div>

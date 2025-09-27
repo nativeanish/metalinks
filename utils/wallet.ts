@@ -74,7 +74,7 @@ export const checkConnection = async () => {
     }
     const data = await window.arweaveWallet.getActiveAddress();
     if (data && data.length) {
-      useAddress.getState().setType("arconnect");
+      useAddress.getState().setType("wander");
       useAddress.setState({ address: data });
       return true;
     }
@@ -140,7 +140,7 @@ export async function connectMetaMask() {
       const [account] = await client.getAddresses();
 
       if (account) {
-        useAddress.getState().setType("metamask");
+        useAddress.getState().setType("wander");
         useAddress.setState({ address: account });
       }
 
