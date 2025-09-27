@@ -151,27 +151,18 @@ function useBalanceQuery(
     enabled: !!address,
   });
 }
-const UserButton = ({
-  onItemClick,
-  address,
-}: {
-  onItemClick?: (item: string) => void;
-  address: string;
-}) => {
+const UserButton = ({ address }: { address: string }) => {
   const wallet = useAddress((state) => state.type);
   const ario = useBalanceQuery("ario-balance", address, get_ario_balance);
   const ar = useBalanceQuery("ar-balance", address, get_ar_balance);
   const ao = useBalanceQuery("ao-balance", address, get_ao_balance);
   const war = useBalanceQuery("war-balance", address, get_war_balance);
-  const theme = useTheme();
-  React.useEffect(() => {
-    console.log("Wallet type:", wallet);
-  }, [wallet]);
+  const theme = useTheme().theme;
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button
-          variant="ghost"
+          variant="outline"
           className="flex items-center gap-2 px-3 py-1.5 
              bg-green-100 dark:bg-green-900/30 
              rounded-sm hover:bg-green-200 
@@ -240,7 +231,7 @@ const UserButton = ({
         </DropdownMenuItem>
         <DropdownMenuItem>
           <div className="flex justify-between w-full items-center">
-            {theme.theme === "dark" ? (
+            {theme === "dark" ? (
               <img
                 src="https://arweave.net/r6TvdrKbdBtWUaCs_m1sT9ce1JWxE4lhJlOOixb_INw"
                 className="w-6 h-6 mr-2"
@@ -262,7 +253,7 @@ const UserButton = ({
         </DropdownMenuItem>
         <DropdownMenuItem>
           <div className="flex justify-between w-full items-center">
-            {theme.theme === "dark" ? (
+            {theme === "dark" ? (
               <img
                 src="https://arweave.net/UVK6iwKDIqAo_vfWIMqIiwV7Qp4mY4y8QPyi2sdrCeo"
                 className="w-6 h-6 mr-2"
@@ -283,7 +274,7 @@ const UserButton = ({
           </div>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => onItemClick?.("notification3")}>
+        <DropdownMenuItem onClick={() => {}}>
           <div className="flex flex-col gap-1">
             <p className="text-sm font-medium">Submit Your Feedback</p>
             <p className="text-xs text-muted-foreground">
