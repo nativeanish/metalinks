@@ -168,7 +168,7 @@ const node = {
           description: "Display Farcaster casts and content",
         },
         {
-          name: "Insta Post",
+          name: "Instagram Post",
           alt: "Instagram-Post",
           icon: FaInstagram,
           description: "Feature Instagram posts and reels",

@@ -1,23 +1,21 @@
 import {
   FaBluesky,
-  FaDiscord,
   FaFacebook,
   FaGithub,
   FaInstagram,
-  FaLink,
   FaLinkedin,
   FaMedium,
-  FaReddit,
   FaSnapchat,
   FaTwitch,
   FaWhatsapp,
   FaXTwitter,
   FaYoutube,
 } from "react-icons/fa6";
-import { RiMailFill, RiTelegram2Fill } from "react-icons/ri";
 import { SiFarcaster } from "react-icons/si";
 import Odysee from "../Image/Odysee";
 import Mirror from "../Image/Mirror";
+import { RiMailFill, RiTelegram2Fill } from "react-icons/ri";
+import { FaDiscord, FaLink, FaReddit } from "react-icons/fa";
 const social = [
   {
     name: "X (Twitter)",

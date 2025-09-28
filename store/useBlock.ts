@@ -46,7 +46,16 @@ const useBlock = create<State>((set) => ({
           icon:
             (foundNode?.icon as React.FC<React.SVGProps<SVGElement>>) ||
             (() => null),
-          title: foundNode?.name ? foundNode.name : String(block),
+          title:
+            foundNode?.alt === "Telegram-Community"
+              ? "Join Telegram"
+              : foundNode?.alt === "Discord-Community"
+                ? "Join Discord"
+                : foundNode?.alt === "Reddit-Community"
+                  ? "Join Reddit"
+                  : foundNode?.name
+                    ? foundNode.name
+                    : String(block),
           description: "",
           urls: [],
           isEnabled: true,
