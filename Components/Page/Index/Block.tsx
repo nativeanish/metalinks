@@ -12,6 +12,8 @@ import BlockForNewsLetter from "./Block/BlockForNewsLetter";
 import BlockForBazarProfile from "./Block/BlockForBazarProfile";
 import BlockForBazarCollection from "./Block/BlockForBazarCollection";
 import BlockForUrl from "./Block/BlockForUrl";
+import BlockForNumber from "./Block/BlockForNumber";
+import BlockForEmail from "./Block/BlockForEmail";
 function Block({ data }: { data: BlockData }) {
   const [type, setType] = useState<
     (typeof node.nav)[0]["name"] | null | undefined
@@ -30,6 +32,12 @@ function Block({ data }: { data: BlockData }) {
     setType(match?.name);
   }, [data.alt]);
   if (type === "Social" || type === "Community") {
+    if (data.alt === "Whatsapp") {
+      return <BlockForNumber data={data} />;
+    }
+    if (data.alt === "Email") {
+      return <BlockForEmail data={data} />;
+    }
     return <BlockForSU data={data} />;
   }
   if (type === "Post" || type === "Video" || type === "Publishing") {
@@ -50,6 +58,10 @@ function Block({ data }: { data: BlockData }) {
       return <BlockForCalendar data={data} />;
     } else if (data.alt === "NewsLetter-Card") {
       return <BlockForNewsLetter data={data} />;
+    } else if (data.alt === "Phone-Card") {
+      return <BlockForNumber data={data} />;
+    } else if (data.alt === "Email-Card") {
+      return <BlockForEmail data={data} />;
     } else {
       return <BlockForUrl data={data} />;
     }
