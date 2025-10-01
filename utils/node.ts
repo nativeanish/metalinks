@@ -14,6 +14,8 @@ import {
   Newspaper,
   Images,
   User,
+  Mail,
+  Phone,
 } from "lucide-react";
 import { SiFarcaster } from "react-icons/si";
 import Paragraph from "../Image/Paragraph";
@@ -70,6 +72,20 @@ const node = {
           icon: Newspaper,
           description:
             "Add a newsletter subscription to your profile to grow your audience",
+        },
+        {
+          name: "Email",
+          alt: "Email-Card",
+          icon: Mail,
+          description:
+            "Add your email address to your profile for direct contact",
+        },
+        {
+          name: "Phone",
+          alt: "Phone-Card",
+          icon: Phone,
+          description:
+            "Add your phone number to your profile for direct contact",
         },
       ],
     },

@@ -34,6 +34,9 @@ import {
 } from "lucide-react";
 import useBlock, { type BlockData } from "../../../../store/useBlock";
 import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { toast } from "sonner";
+import numberToOffsetString from "../../../../utils/timezone";
 
 interface ScheduleSlot {
   id: string;
@@ -61,27 +64,15 @@ interface CalendarData {
   defaultTimezone: string;
 }
 
-// Common timezones for the select dropdown
-const TIMEZONES = [
-  { value: "UTC", label: "UTC (Coordinated Universal Time)" },
-  { value: "America/New_York", label: "Eastern Time (ET)" },
-  { value: "America/Chicago", label: "Central Time (CT)" },
-  { value: "America/Denver", label: "Mountain Time (MT)" },
-  { value: "America/Los_Angeles", label: "Pacific Time (PT)" },
-  { value: "Europe/London", label: "London (GMT/BST)" },
-  { value: "Europe/Paris", label: "Paris (CET/CEST)" },
-  { value: "Europe/Berlin", label: "Berlin (CET/CEST)" },
-  { value: "Asia/Tokyo", label: "Tokyo (JST)" },
-  { value: "Asia/Shanghai", label: "Shanghai (CST)" },
-  { value: "Asia/Kolkata", label: "India (IST)" },
-  { value: "Australia/Sydney", label: "Sydney (AEST/AEDT)" },
-];
-
 function BlockForCalendar({ data }: { data: BlockData }) {
   const updateBlockData = useBlock((s) => s.updateBlocks);
   const removeBlock = useBlock((s) => s.removeBlock);
   const [isEditing, setIsEditing] = useState(false);
-
+  const [timezone, setTimezone] = useState<
+    Array<{ value: string; label: string }>
+  >([]);
+  const [timezoneSearch, setTimezoneSearch] = useState("");
+  const [scheduleTimezoneSearch, setScheduleTimezoneSearch] = useState("");
   const [calendarData, setCalendarData] = useState<CalendarData>(() => {
     // Try to parse existing data from URLs or initialize empty
     try {
@@ -118,7 +109,44 @@ function BlockForCalendar({ data }: { data: BlockData }) {
         Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
     };
   });
-
+  const timezone_data = useQuery({
+    queryKey: ["timezones"],
+    queryFn: async () => {
+      const res = await fetch(
+        "https://arweave.net/8kcrMR_jflTOqkGED1EmQaTYjy1Jjj8lMZ7Qa4h2P7Q"
+      );
+      if (!res.ok) {
+        toast.error("Failed to load timezone data");
+        throw new Error("Failed to fetch timezones");
+      }
+      return res.json();
+    },
+  });
+  useEffect(() => {
+    if (timezone_data.data) {
+      if (Array.isArray(timezone_data.data)) {
+        const dt = timezone_data.data as Array<{
+          value: string;
+          abbr: string;
+          offset: number;
+          isdt: false;
+          text: string;
+          utc: Array<string>;
+        }>;
+        const fs: Array<{ value: string; label: string }> = [];
+        const seen = new Set<string>();
+        dt.forEach((tz) => {
+          tz.utc.forEach((utcZone) => {
+            if (!seen.has(utcZone)) {
+              seen.add(utcZone);
+              fs.push({ value: String(tz.offset), label: utcZone });
+            }
+          });
+        });
+        setTimezone(fs);
+      }
+    }
+  }, [timezone_data.data]);
   // Auto-detect user's timezone on mount
   useEffect(() => {
     const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -402,22 +430,51 @@ function BlockForCalendar({ data }: { data: BlockData }) {
                 <Label>Default Timezone</Label>
                 <Select
                   value={calendarData.defaultTimezone}
-                  onValueChange={(value) =>
+                  onValueChange={(value) => {
+                    console.log(value);
                     setCalendarData((prev) => ({
                       ...prev,
                       defaultTimezone: value,
-                    }))
-                  }
+                    }));
+                    setTimezoneSearch(""); // Clear search when selection is made
+                  }}
                 >
                   <SelectTrigger className="bg-muted/40">
                     <SelectValue placeholder="Select timezone" />
                   </SelectTrigger>
                   <SelectContent>
-                    {TIMEZONES.map((tz) => (
-                      <SelectItem key={tz.value} value={tz.value}>
-                        {tz.label}
-                      </SelectItem>
-                    ))}
+                    <div className="p-2 border-b">
+                      <Input
+                        placeholder="Search timezone..."
+                        value={timezoneSearch}
+                        onChange={(e) => setTimezoneSearch(e.target.value)}
+                        className="h-8 text-sm"
+                      />
+                    </div>
+                    <div className="max-h-60 overflow-y-auto">
+                      {timezone
+                        .filter((tz) =>
+                          tz.label
+                            .toLowerCase()
+                            .includes(timezoneSearch.toLowerCase())
+                        )
+                        .map((tz) => (
+                          <SelectItem key={tz.label} value={tz.label}>
+                            {tz.label} (
+                            {numberToOffsetString(parseFloat(tz.value))})
+                          </SelectItem>
+                        ))}
+                      {timezone.filter((tz) =>
+                        tz.label
+                          .toLowerCase()
+                          .includes(timezoneSearch.toLowerCase())
+                      ).length === 0 &&
+                        timezoneSearch && (
+                          <div className="p-2 text-sm text-muted-foreground text-center">
+                            No timezones found
+                          </div>
+                        )}
+                    </div>
                   </SelectContent>
                 </Select>
               </div>
@@ -512,11 +569,12 @@ function BlockForCalendar({ data }: { data: BlockData }) {
                           <Label className="text-xs">Timezone</Label>
                           <Select
                             value={schedule.timezone}
-                            onValueChange={(value) =>
+                            onValueChange={(value) => {
                               updateScheduleSlot(schedule.id, {
                                 timezone: value,
-                              })
-                            }
+                              });
+                              setScheduleTimezoneSearch(""); // Clear search when selection is made
+                            }}
                           >
                             <SelectTrigger
                               size="sm"
@@ -525,11 +583,47 @@ function BlockForCalendar({ data }: { data: BlockData }) {
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              {TIMEZONES.map((tz) => (
-                                <SelectItem key={tz.value} value={tz.value}>
-                                  {tz.label}
-                                </SelectItem>
-                              ))}
+                              <div className="p-2 border-b">
+                                <Input
+                                  placeholder="Search timezone..."
+                                  value={scheduleTimezoneSearch}
+                                  onChange={(e) =>
+                                    setScheduleTimezoneSearch(e.target.value)
+                                  }
+                                  className="h-8 text-sm"
+                                />
+                              </div>
+                              <div className="max-h-60 overflow-y-auto">
+                                {timezone
+                                  .filter((tz) =>
+                                    tz.label
+                                      .toLowerCase()
+                                      .includes(
+                                        scheduleTimezoneSearch.toLowerCase()
+                                      )
+                                  )
+                                  .map((tz) => (
+                                    <SelectItem key={tz.label} value={tz.label}>
+                                      {tz.label} (
+                                      {numberToOffsetString(
+                                        parseFloat(tz.value)
+                                      )}
+                                      )
+                                    </SelectItem>
+                                  ))}
+                                {timezone.filter((tz) =>
+                                  tz.label
+                                    .toLowerCase()
+                                    .includes(
+                                      scheduleTimezoneSearch.toLowerCase()
+                                    )
+                                ).length === 0 &&
+                                  scheduleTimezoneSearch && (
+                                    <div className="p-2 text-sm text-muted-foreground text-center">
+                                      No timezones found
+                                    </div>
+                                  )}
+                              </div>
                             </SelectContent>
                           </Select>
                         </div>
@@ -669,7 +763,7 @@ function BlockForCalendar({ data }: { data: BlockData }) {
                                             startTime: e.target.value,
                                           })
                                         }
-                                        className="h-7 w-24 bg-background/50"
+                                        className="h-7 w-30 bg-background/50"
                                         disabled={!d.enabled}
                                       />
                                       <span>–</span>
@@ -682,7 +776,7 @@ function BlockForCalendar({ data }: { data: BlockData }) {
                                             endTime: e.target.value,
                                           })
                                         }
-                                        className="h-7 w-24 bg-background/50"
+                                        className="h-7 w-28 bg-background/50"
                                         disabled={!d.enabled}
                                       />
                                     </div>
